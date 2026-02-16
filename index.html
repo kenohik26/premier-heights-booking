@@ -1859,15 +1859,14 @@
         // ============================================
         // TODO: Replace with your Firebase config from Firebase Console
         const firebaseConfig = {
-  apiKey: "AIzaSyDKR8DmK3KROoOQgXtS_sQI0hWdKujAUP0",
-  authDomain: "premier-heights-booking.firebaseapp.com",
-  databaseURL: "https://premier-heights-booking-default-rtdb.firebaseio.com",
-  projectId: "premier-heights-booking",
-  storageBucket: "premier-heights-booking.firebasestorage.app",
-  messagingSenderId: "231850652152",
-  appId: "1:231850652152:web:6e618e5b8ec805ec81660d",
-  measurementId: "G-KWLGX537X5"
-};
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         // Initialize Firebase
         let database, storage;
@@ -2540,10 +2539,69 @@ Lagos, Nigeria`,
             };
 
             const sendDailyScheduleToGroup = () => {
-                const message = generateDailyScheduleMessage();
-                // Direct link to your Premier Heights team group
-                const whatsappUrl = `https://chat.whatsapp.com/KKDyFzkb7OH09vSwZPq55d?text=${message}`;
-                window.open(whatsappUrl, '_blank');
+                const today = new Date();
+                const dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
+                const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                
+                const todayStr = today.toDateString();
+                const todayCheckins = bookings.filter(b => {
+                    const checkIn = new Date(b.checkIn).toDateString();
+                    return checkIn === todayStr && b.status !== 'cancelled';
+                });
+                
+                const todayCheckouts = bookings.filter(b => {
+                    const checkOut = new Date(b.checkOut).toDateString();
+                    return checkOut === todayStr && b.status !== 'cancelled';
+                });
+
+                let message = `🏠 *PREMIER HEIGHTS - DAILY SCHEDULE*\n📅 ${dayName}, ${dateStr}\n\n`;
+
+                // Check-ins
+                message += `✅ *CHECK-INS TODAY*`;
+                if (todayCheckins.length > 0) {
+                    message += ` (${todayCheckins.length})\n`;
+                    todayCheckins.forEach(booking => {
+                        const apartment = apartments.find(a => a.id === booking.apartmentId);
+                        message += `• ${apartment?.name} Apartment - 2:00 PM\n`;
+                    });
+                } else {
+                    message += `\nNo check-ins scheduled\n`;
+                }
+
+                message += `\n`;
+
+                // Check-outs
+                message += `📤 *CHECK-OUTS TODAY*`;
+                if (todayCheckouts.length > 0) {
+                    message += ` (${todayCheckouts.length})\n`;
+                    todayCheckouts.forEach(booking => {
+                        const apartment = apartments.find(a => a.id === booking.apartmentId);
+                        message += `• ${apartment?.name} Apartment - 12:00 PM\n`;
+                    });
+                } else {
+                    message += `\nNo check-outs scheduled\n`;
+                }
+
+                message += `\n`;
+
+                // Greeting based on activity
+                if (todayCheckins.length === 0 && todayCheckouts.length === 0) {
+                    message += `Quiet day! 😊`;
+                } else {
+                    message += `Good morning team! 🌅`;
+                }
+
+                // Copy message to clipboard
+                navigator.clipboard.writeText(message).then(() => {
+                    // Open WhatsApp group
+                    window.open('https://chat.whatsapp.com/KKDyFzkb7OH09vSwZPq55d', '_blank');
+                    
+                    // Show notification
+                    alert('✅ Message copied to clipboard!\n\nWhatsApp group is opening...\n\nJust paste (Ctrl+V or Cmd+V) and send!');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Please allow clipboard access to copy the message automatically.');
+                });
             };
 
             // Expense Management Functions
